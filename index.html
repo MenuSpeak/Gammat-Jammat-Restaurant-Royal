@@ -213,9 +213,6 @@ img{max-width:100%;display:block}
 .delivery-toggle button.active{background:linear-gradient(135deg,var(--purple),var(--purple-light));border-color:var(--purple);color:var(--gold-soft);box-shadow:0 6px 18px rgba(45,27,78,.3)}
 .delivery-toggle button.active i{color:var(--gold)}
 .delivery-toggle button:active{transform:scale(.96)}
-.checkout-fields{display:flex;flex-direction:column;gap:.8rem;margin-bottom:1rem}
-.checkout-fields input,.checkout-fields textarea{background:var(--cream);border:2px solid rgba(45,27,78,.1)}
-.checkout-fields input:focus,.checkout-fields textarea:focus{background:#fff;border-color:var(--gold);box-shadow:0 0 0 4px rgba(212,175,55,.2)}
 .single-field input{background:var(--cream);border:2px solid rgba(45,27,78,.1)}
 .single-field input:focus{background:#fff;border-color:var(--gold);box-shadow:0 0 0 4px rgba(212,175,55,.2)}
 
@@ -371,26 +368,17 @@ img{max-width:100%;display:block}
     </div>
 
     <div class="checkout-section">
-      <h4><i class="fas fa-motorcycle" style="color:var(--plum);margin-right:.4rem;"></i> Order type</h4>
+      <h4><i class="fas fa-utensils" style="color:var(--plum);margin-right:.4rem;"></i> Order type</h4>
       <div class="delivery-toggle" id="deliveryToggle">
-        <button class="active" data-type="takeaway"><i class="fas fa-store"></i> Takeaway</button>
-        <button data-type="delivery"><i class="fas fa-motorcycle"></i> Delivery</button>
+        <button class="active" data-type="dinein"><i class="fas fa-chair"></i> Dine In</button>
+        <button data-type="takeaway"><i class="fas fa-store"></i> Takeaway</button>
       </div>
     </div>
 
-    <div class="checkout-section" id="takeawayFields">
+    <div class="checkout-section" id="dineinFields">
       <h4><i class="fas fa-chair" style="color:var(--plum);margin-right:.4rem;"></i> Table Number</h4>
       <div class="single-field">
         <input type="text" id="tableNumber" placeholder="e.g. 12" style="background:var(--cream);">
-      </div>
-    </div>
-
-    <div class="checkout-section" id="deliveryFields" style="display:none;">
-      <h4><i class="fas fa-user" style="color:var(--plum);margin-right:.4rem;"></i> Your Details</h4>
-      <div class="checkout-fields">
-        <input type="text" id="customerName" placeholder="Full name" autocomplete="name">
-        <input type="tel" id="customerPhone" placeholder="Phone number" autocomplete="tel" inputmode="tel">
-        <textarea id="customerAddress" rows="2" placeholder="Delivery address" autocomplete="street-address"></textarea>
       </div>
     </div>
 
@@ -713,12 +701,8 @@ img{max-width:100%;display:block}
   const closeCartBtn = $('closeCart');
   const deliveryToggle = $('deliveryToggle');
   const whatsappBtn = $('whatsappBtn');
-  const customerName = $('customerName');
-  const customerPhone = $('customerPhone');
-  const customerAddress = $('customerAddress');
   const tableNumber = $('tableNumber');
-  const takeawayFields = $('takeawayFields');
-  const deliveryFields = $('deliveryFields');
+  const dineinFields = $('dineinFields');
   const heroOrderBtn = $('heroOrderBtn');
   const heroMenuBtn = $('heroMenuBtn');
   const toastEl = $('toast');
@@ -737,7 +721,7 @@ img{max-width:100%;display:block}
   try { cart = JSON.parse(localStorage.getItem('gammatJammatCart')) || {}; } catch(e){ cart = {}; }
   let activeCategory = 'all';
   let searchQuery = '';
-  let orderType = 'takeaway';
+  let orderType = 'dinein';
 
   let toastTimer;
   function showToast(msg, icon){
@@ -935,12 +919,10 @@ img{max-width:100%;display:block}
   cartOverlay.addEventListener('click', closeCartPanel);
 
   function updateOrderFields(){
-    if (orderType === 'takeaway'){
-      takeawayFields.style.display = 'block';
-      deliveryFields.style.display = 'none';
+    if (orderType === 'dinein'){
+      dineinFields.style.display = 'block';
     } else {
-      takeawayFields.style.display = 'none';
-      deliveryFields.style.display = 'block';
+      dineinFields.style.display = 'none';
     }
   }
 
@@ -958,17 +940,12 @@ img{max-width:100%;display:block}
     if (cartIds.length === 0){ showToast('Your cart is empty', 'fa-shopping-basket'); return; }
 
     const table = tableNumber.value.trim();
-    const name = customerName.value.trim();
-    const phone = customerPhone.value.trim();
-    const address = customerAddress.value.trim();
 
-    if (orderType === 'takeaway'){
-      if (!table){ showToast('Please enter table number', 'fa-exclamation-circle'); tableNumber.focus(); return; }
-    } else {
-      if (!name){ showToast('Please enter your name', 'fa-exclamation-circle'); customerName.focus(); return; }
-      if (!phone){ showToast('Please enter your phone number', 'fa-exclamation-circle'); customerPhone.focus(); return; }
-      if (!/^[\d+\-\s()]{6,}$/.test(phone)){ showToast('Enter a valid phone number', 'fa-exclamation-circle'); customerPhone.focus(); return; }
-      if (!address){ showToast('Please enter delivery address', 'fa-exclamation-circle'); customerAddress.focus(); return; }
+    // Dine In ke liye table number zaroori, Takeaway ke liye kuch nahi
+    if (orderType === 'dinein' && !table){
+      showToast('Please enter table number', 'fa-exclamation-circle');
+      tableNumber.focus();
+      return;
     }
 
     const total = cartIds.reduce((s, id) => {
@@ -984,13 +961,9 @@ img{max-width:100%;display:block}
     }).filter(Boolean).join('\n');
 
     let msg = `*${RESTAURANT_NAME} - Order*\n\n`;
-    msg += `*Order Type:* ${orderType === 'takeaway' ? 'Takeaway (Dine-in)' : 'Delivery'}\n`;
-    if (orderType === 'takeaway'){
+    msg += `*Order Type:* ${orderType === 'dinein' ? 'Dine In' : 'Takeaway'}\n`;
+    if (orderType === 'dinein'){
       msg += `*Table No:* ${table}\n`;
-    } else {
-      msg += `*Name:* ${name}\n`;
-      msg += `*Phone:* ${phone}\n`;
-      msg += `*Address:* ${address}\n`;
     }
     msg += `\n*Items:*\n${lines}\n\n`;
     msg += `*Total: ₹${total}*`;
@@ -998,6 +971,12 @@ img{max-width:100%;display:block}
     const url = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(msg);
     window.open(url, '_blank');
     showToast('Opening WhatsApp...', 'fa-whatsapp');
+
+    // ✅ Order place ke baad cart empty + next order ke liye reset
+    cart = {};
+    updateCartUI();
+    tableNumber.value = '';
+    closeCartPanel();
   });
 
   heroOrderBtn.addEventListener('click', () => {
